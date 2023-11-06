@@ -1,21 +1,28 @@
 % clear the memory and the screen
-clear all; clc;
+clear; clc;
 
+% =========================================================================
+% Problem definition
 % exact solution
 exact = @(x) x.^3;
 
-% problem definition
 f = @(x) -6.0 * x;
 g = 1;
 h = 0;
+% =========================================================================
 
-% generate my mesh
-n_el = 9;
-hh = 1 / n_el;
+% parameters of the FEM
+n_el  = 13;       % number of elements
+n_en  = 2;        % number of element nodes
+n_int = 3;        % number of quadrature points
+n_np  = n_el + 1; % number of points
+n_eq  = n_np - 1; % number of equations
+
+% =========================================================================
+% Generate the mesh
+% nodal coordinates
+hh     = 1 / n_el;
 x_coor = 0 : hh : 1;
-
-% number of element nodes
-n_en = 2;
 
 % IEN
 IEN = zeros(n_en, n_el);
@@ -25,19 +32,15 @@ for ee = 1 : n_el
     IEN(aa,ee) = ee + aa - 1;
   end
 end
+% =========================================================================
 
-% ID
-n_pt = n_el + 1; % number of points
-ID = 1 : n_pt;
-ID(end) = 0;
+% ID and LM arrays are generated based on the BC info
+ID = 1 : n_np;
+ID(end) = 0; % Modify ID according to the Dirichlet BC info
 
-% LM
 LM = ID(IEN);
 
-n_eq = n_pt - 1; % number of equations
-
 % generate the quadrature rule
-n_int = 30;
 [xi, weight] = Gauss(n_int, -1, 1);
 
 K = spalloc(n_eq, n_eq, 3*n_eq); % allocate the global stiffness matrix
@@ -45,34 +48,26 @@ F = zeros(n_eq, 1);    % allocate the global load vector
 
 % Assembly of K and F
 for ee = 1 : n_el
-
     k_e = zeros(n_en, n_en);
     f_e = zeros(n_en, 1);
+    
+    x_ele = x_coor(IEN(1:n_en,ee)); % A = IEN(a,e) and x_ele(a) = x_coor(A)
 
-    x_ele = zeros(n_en,1);
-    for aa = 1 : n_en
-        x_ele(aa) = x_coor(IEN(aa,ee)); % A = IEN(a,e)
-    end
-
-    for l = 1 : n_int
+    for ll = 1 : n_int
         dx_dxi = 0.0;
         x_l = 0.0;
         for aa = 1 : n_en
-            dx_dxi = dx_dxi + x_ele(aa) * PolyShape(aa, xi(l), 1);
-            x_l = x_l + x_ele(aa) * PolyShape(aa, xi(l), 0);
+            dx_dxi = dx_dxi + x_ele(aa) * PolyShape(aa, xi(ll), 1);
+            x_l = x_l + x_ele(aa) * PolyShape(aa, xi(ll), 0);
         end
         dxi_dx = 1.0 / dx_dxi;
 
         for aa = 1 : n_en
+            f_e(aa) = f_e(aa) + weight(ll) * PolyShape(aa, xi(ll), 0) * f(x_l) * dx_dxi;
             for bb = 1 : n_en
-                k_e(aa,bb) = k_e(aa,bb) + weight(l) * PolyShape(aa, xi(l), 1) * PolyShape(bb, xi(l), 1) * dxi_dx;
+                k_e(aa,bb) = k_e(aa,bb) + weight(ll) * PolyShape(aa, xi(ll), 1) * PolyShape(bb, xi(ll), 1) * dxi_dx;
             end
         end
-
-        for aa = 1 : n_en
-            f_e(aa) = f_e(aa) + weight(l) * PolyShape(aa, xi(l), 0) * f(x_l) * dx_dxi;
-        end
-
     end
 
     % Now we need to put element k and f into global K and F
@@ -96,22 +91,10 @@ for ee = 1 : n_el
     end
 end
 
-% Now we have K and F
-% Solve Kd = F
-uh = K \ F;
+% Now we have K and F assembled and we solve the linear system Kd = F
+d_temp = K \ F;
 
-disp = [uh; g];
-
-% Post processing-1 error analysis of the derivative error at x = 0.5
-exact_x = @(x) 3.0 * x.^2;
-e_m = median(1:n_el);
-A_m = IEN(1, e_m);
-uh_x = disp(A_m) * PolyShape(1, 0.0, 1) * (2 / hh) ...
-  + disp(A_m+1) * PolyShape(2, 0.0, 1) * (2 / hh);
-
-e_x = uh_x - exact_x(0.5);
-
-
-
+% Generate the full solution vector by inserting back the Dirichlet value
+disp = [d_temp; g];
 
 % eof
