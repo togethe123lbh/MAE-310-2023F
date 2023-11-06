@@ -2,15 +2,15 @@
 clear all; clc;
 
 % exact solution
-exact = @(x) sin(x);
+exact = @(x) x.^3;
 
 % problem definition
-f = @(x) sin(x);
-g = sin(1);
-h = -cos(0);
+f = @(x) -6.0 * x;
+g = 1;
+h = 0;
 
 % generate my mesh
-n_el = 5;
+n_el = 9;
 hh = 1 / n_el;
 x_coor = 0 : hh : 1;
 
@@ -40,7 +40,7 @@ n_eq = n_pt - 1; % number of equations
 n_int = 30;
 [xi, weight] = Gauss(n_int, -1, 1);
 
-K = zeros(n_eq, n_eq); % allocate the global stiffness matrix
+K = spalloc(n_eq, n_eq, 3*n_eq); % allocate the global stiffness matrix
 F = zeros(n_eq, 1);    % allocate the global load vector
 
 % Assembly of K and F
@@ -101,5 +101,17 @@ end
 uh = K \ F;
 
 disp = [uh; g];
+
+% Post processing-1 error analysis of the derivative error at x = 0.5
+exact_x = @(x) 3.0 * x.^2;
+e_m = median(1:n_el);
+A_m = IEN(1, e_m);
+uh_x = disp(A_m) * PolyShape(1, 0.0, 1) * (2 / hh) ...
+  + disp(A_m+1) * PolyShape(2, 0.0, 1) * (2 / hh);
+
+e_x = uh_x - exact_x(0.5);
+
+
+
 
 % eof
