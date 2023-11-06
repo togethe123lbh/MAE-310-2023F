@@ -27,6 +27,9 @@ n_pt = n_el + 1; % number of points
 ID = 1 : n_pt;
 ID(end) = 0;
 
+% LM
+LM = ID(IEN);
+
 n_eq = n_pt - 1; % number of equations
 
 % generate the quadrature rule
@@ -70,13 +73,11 @@ for ee = 1 : n_el
 
     % Now we need to put element k and f into global K and F
     for aa = 1 : 2
-        AA = IEN(aa,ee);
-        PP = ID(AA);
+        PP = LM(aa,ee);
         if PP > 0
             F(PP) = F(PP) + f_e(aa);
             for bb = 1 : 2
-                BB = IEN(bb,ee);
-                QQ = ID(BB);
+                QQ = LM(bb,ee);
                 if QQ > 0
                     K(PP,QQ) = K(PP,QQ) + k_e(aa,bb);
                 else
