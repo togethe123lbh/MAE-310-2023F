@@ -65,7 +65,7 @@ for ee = 1 : n_el
             end
         end
 
-        for a = 1 : 2
+        for aa = 1 : 2
             f_e(aa) = f_e(aa) + weight(l) * PolyShape(aa, xi(l), 0) * f(x_l) * dx_dxi;
         end
 
