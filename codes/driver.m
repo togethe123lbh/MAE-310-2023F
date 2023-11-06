@@ -17,9 +17,9 @@ x_coor = 0 : hh : 1;
 % IEN
 IEN = zeros(2, n_el);
 
-for e = 1 : n_el
-    IEN(1,e) = e;
-    IEN(2,e) = e+1;
+for ee = 1 : n_el
+    IEN(1,ee) = ee;
+    IEN(2,ee) = ee+1;
 end
 
 % ID
@@ -37,57 +37,57 @@ K = zeros(n_eq, n_eq); % allocate the global stiffness matrix
 F = zeros(n_eq, 1);    % allocate the global load vector
 
 % Assembly of K and F
-for e = 1 : n_el
+for ee = 1 : n_el
 
     k_e = zeros(2,2);
     f_e = zeros(2,1);
 
     x_ele = zeros(2,1);
-    for a = 1 : 2
-        x_ele(a) = x_coor(IEN(a,e)); % A = IEN(a,e)
+    for aa = 1 : 2
+        x_ele(aa) = x_coor(IEN(aa,ee)); % A = IEN(a,e)
     end
 
     for l = 1 : n_int
         dx_dxi = 0.0;
         x_l = 0.0;
-        for a = 1 : 2
-            dx_dxi = dx_dxi + x_ele(a) * PolyShape(a, xi(l), 1);
-            x_l = x_l + x_ele(a) * PolyShape(a, xi(l), 0);
+        for aa = 1 : 2
+            dx_dxi = dx_dxi + x_ele(aa) * PolyShape(aa, xi(l), 1);
+            x_l = x_l + x_ele(aa) * PolyShape(aa, xi(l), 0);
         end
         dxi_dx = 1.0 / dx_dxi;
 
-        for a = 1 : 2
-            for b = 1 : 2
-                k_e(a,b) = k_e(a,b) + weight(l) * PolyShape(a, xi(l), 1) * PolyShape(b, xi(l), 1) * dxi_dx;
+        for aa = 1 : 2
+            for bb = 1 : 2
+                k_e(aa,bb) = k_e(aa,bb) + weight(l) * PolyShape(aa, xi(l), 1) * PolyShape(bb, xi(l), 1) * dxi_dx;
             end
         end
 
         for a = 1 : 2
-            f_e(a) = f_e(a) + weight(l) * PolyShape(a, xi(l), 0) * f(x_l) * dx_dxi;
+            f_e(aa) = f_e(aa) + weight(l) * PolyShape(aa, xi(l), 0) * f(x_l) * dx_dxi;
         end
 
     end
 
     % Now we need to put element k and f into global K and F
-    for a = 1 : 2
-        AA = IEN(a,e);
+    for aa = 1 : 2
+        AA = IEN(aa,ee);
         PP = ID(AA);
         if PP > 0
-            F(PP) = F(PP) + f_e(a);
-            for b = 1 : 2
-                BB = IEN(b,e);
+            F(PP) = F(PP) + f_e(aa);
+            for bb = 1 : 2
+                BB = IEN(bb,ee);
                 QQ = ID(BB);
                 if QQ > 0
-                    K(PP,QQ) = K(PP,QQ) + k_e(a,b);
+                    K(PP,QQ) = K(PP,QQ) + k_e(aa,bb);
                 else
-                    F(PP) = F(PP) - k_e(a,b) * g;
+                    F(PP) = F(PP) - k_e(aa,bb) * g;
                 end
             end
         end
     end
 
-    if e == 1
-        F(ID(IEN(1,e))) = F(ID(IEN(1,e))) + h;
+    if ee == 1
+        F(ID(IEN(1,ee))) = F(ID(IEN(1,ee))) + h;
     end
 end
 
@@ -95,6 +95,6 @@ end
 % Solve Kd = F
 uh = K \ F;
 
-d = [uh; g];
+disp = [uh; g];
 
 % eof
