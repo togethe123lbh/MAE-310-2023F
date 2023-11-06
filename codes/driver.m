@@ -14,12 +14,16 @@ n_el = 5;
 hh = 1 / n_el;
 x_coor = 0 : hh : 1;
 
+% number of element nodes
+n_en = 2;
+
 % IEN
-IEN = zeros(2, n_el);
+IEN = zeros(n_en, n_el);
 
 for ee = 1 : n_el
-    IEN(1,ee) = ee;
-    IEN(2,ee) = ee+1;
+  for aa = 1 : n_en
+    IEN(aa,ee) = ee + aa - 1;
+  end
 end
 
 % ID
@@ -42,41 +46,41 @@ F = zeros(n_eq, 1);    % allocate the global load vector
 % Assembly of K and F
 for ee = 1 : n_el
 
-    k_e = zeros(2,2);
-    f_e = zeros(2,1);
+    k_e = zeros(n_en, n_en);
+    f_e = zeros(n_en, 1);
 
-    x_ele = zeros(2,1);
-    for aa = 1 : 2
+    x_ele = zeros(n_en,1);
+    for aa = 1 : n_en
         x_ele(aa) = x_coor(IEN(aa,ee)); % A = IEN(a,e)
     end
 
     for l = 1 : n_int
         dx_dxi = 0.0;
         x_l = 0.0;
-        for aa = 1 : 2
+        for aa = 1 : n_en
             dx_dxi = dx_dxi + x_ele(aa) * PolyShape(aa, xi(l), 1);
             x_l = x_l + x_ele(aa) * PolyShape(aa, xi(l), 0);
         end
         dxi_dx = 1.0 / dx_dxi;
 
-        for aa = 1 : 2
-            for bb = 1 : 2
+        for aa = 1 : n_en
+            for bb = 1 : n_en
                 k_e(aa,bb) = k_e(aa,bb) + weight(l) * PolyShape(aa, xi(l), 1) * PolyShape(bb, xi(l), 1) * dxi_dx;
             end
         end
 
-        for aa = 1 : 2
+        for aa = 1 : n_en
             f_e(aa) = f_e(aa) + weight(l) * PolyShape(aa, xi(l), 0) * f(x_l) * dx_dxi;
         end
 
     end
 
     % Now we need to put element k and f into global K and F
-    for aa = 1 : 2
+    for aa = 1 : n_en
         PP = LM(aa,ee);
         if PP > 0
             F(PP) = F(PP) + f_e(aa);
-            for bb = 1 : 2
+            for bb = 1 : n_en
                 QQ = LM(bb,ee);
                 if QQ > 0
                     K(PP,QQ) = K(PP,QQ) + k_e(aa,bb);
