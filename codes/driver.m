@@ -34,17 +34,18 @@ for ee = 1 : n_el
 end
 % =========================================================================
 
-% ID and LM arrays are generated based on the BC info
+% ID
 ID = 1 : n_np;
-ID(end) = 0; % Modify ID according to the Dirichlet BC info
+ID(end) = 0;
 
+% LM
 LM = ID(IEN);
 
 % generate the quadrature rule
 [xi, weight] = Gauss(n_int, -1, 1);
 
-K = spalloc(n_eq, n_eq, 3*n_eq); % allocate the global stiffness matrix
-F = zeros(n_eq, 1);    % allocate the global load vector
+K = spalloc(n_eq, n_eq, 3*n_eq);  % allocate the global stiffness matrix
+F = zeros(n_eq, 1);     % allocate the global load vector
 
 % Assembly of K and F
 for ee = 1 : n_el
@@ -53,30 +54,42 @@ for ee = 1 : n_el
     
     x_ele = x_coor(IEN(1:n_en,ee)); % A = IEN(a,e) and x_ele(a) = x_coor(A)
 
-    for ll = 1 : n_int
+    k_e = zeros(n_en,n_en);
+    f_e = zeros(n_en,1);
+
+    x_ele = zeros(n_en,1);
+    for a = 1 : n_en
+        x_ele(a) = x_coor(IEN(a,e)); % A = IEN(a,e)
+    end
+
+    for l = 1 : n_int
         dx_dxi = 0.0;
         x_l = 0.0;
-        for aa = 1 : n_en
-            dx_dxi = dx_dxi + x_ele(aa) * PolyShape(aa, xi(ll), 1);
-            x_l = x_l + x_ele(aa) * PolyShape(aa, xi(ll), 0);
+        for a = 1 : n_en
+            dx_dxi = dx_dxi + x_ele(a) * PolyShape(a, xi(l), 1);
+            x_l = x_l + x_ele(a) * PolyShape(a, xi(l), 0);
         end
         dxi_dx = 1.0 / dx_dxi;
 
-        for aa = 1 : n_en
-            f_e(aa) = f_e(aa) + weight(ll) * PolyShape(aa, xi(ll), 0) * f(x_l) * dx_dxi;
-            for bb = 1 : n_en
-                k_e(aa,bb) = k_e(aa,bb) + weight(ll) * PolyShape(aa, xi(ll), 1) * PolyShape(bb, xi(ll), 1) * dxi_dx;
+        for a = 1 : n_en
+            for b = 1 : n_en
+                k_e(a,b) = k_e(a,b) + weight(l) * PolyShape(a, xi(l), 1) * PolyShape(b, xi(l), 1) * dxi_dx;
             end
         end
+
+        for a = 1 : n_en
+            f_e(a) = f_e(a) + weight(l) * PolyShape(a, xi(l), 0) * f(x_l) * dx_dxi;
+        end
+
     end
 
     % Now we need to put element k and f into global K and F
-    for aa = 1 : n_en
-        PP = LM(aa,ee);
+    for a = 1 : n_en
+        PP = LM(a,e);
         if PP > 0
-            F(PP) = F(PP) + f_e(aa);
-            for bb = 1 : n_en
-                QQ = LM(bb,ee);
+            F(PP) = F(PP) + f_e(a);
+            for b = 1 : 2
+                QQ = LM(b,e);
                 if QQ > 0
                     K(PP,QQ) = K(PP,QQ) + k_e(aa,bb);
                 else
@@ -86,15 +99,23 @@ for ee = 1 : n_el
         end
     end
 
-    if ee == 1
-        F(ID(IEN(1,ee))) = F(ID(IEN(1,ee))) + h;
+    % Neumann BC
+    if e == 1
+        F(ID(IEN(1,e))) = F(ID(IEN(1,e))) + h;
     end
 end
 
 % Now we have K and F assembled and we solve the linear system Kd = F
 d_temp = K \ F;
 
-% Generate the full solution vector by inserting back the Dirichlet value
-disp = [d_temp; g];
+disp = [uh; g];
+
+% Check mid-point
+e_mid = median(1:n_el);
+Uh_x = disp(IEN(1, e_mid)) * PolyShape(1, 0, 1) * 2 / hh + disp(IEN(2, e_mid)) * PolyShape(2, 0.0, 1) * 2 / hh;
+u_x = 3 * 0.5 * 0.5;
+
+e_x = Uh_x - u_x
+hh
 
 % eof
