@@ -129,12 +129,12 @@ for ee=1:n_el
        % eH2down1=eH2down1+(exact_dx(xl)).^2*dx_dxi*weight(ll);
     end
 end
-el2(n_el)=sqrt(el2up1/el2down);
-eH2(n_el)=sqrt(eH2up1/eH2down);
+el2(n_el*0.5)=sqrt(el2up1/el2down);
+eH2(n_el*0.5)=sqrt(eH2up1/eH2down);
 end
-for hh=2:2:16
-    ele_hh=1.0/hh;
-end
+
+    ele_hh=1./(2:2:16);
+
  plot(log(ele_hh),log(el2))
  hold on
  plot(log(ele_hh),log(eH2))
