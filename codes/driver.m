@@ -4,17 +4,25 @@ clear; clc;
 % =========================================================================
 % Problem definition exact solution
 
-exact = @(x) x.^3;
-exact_dx=@(x) 3*x.^2;
+exact = @(x) -x.^3;
+exact_dx=@(x) -3*(x.^2);
 f = @(x) -6.0 * x;
+exact_2=@(x) x.^6;
+el2down=integral(exact_2,0,1);
+exact_dx2=@(x) 9*(x.^4);
+eH2down=integral(exact_dx2,0,1);
 g = 1;
 h = 0;
 % =========================================================================
 
 % parameters of the FEM
-n_el  = 10;       % number of elements
+n_el  = 2;       % number of elements
 n_en  = 2;        % number of element nodes
 n_int = 3;        % number of quadrature points
+el2=zeros(8,1);
+eH2=zeros(8,1);
+for el=2:2:16
+    n_el = el;
 n_np  = n_el + 1; % number of points 
 n_eq  = n_np - 1; % number of equations
 
@@ -99,7 +107,9 @@ disp = [d_temp; g];
 % eof
 %2b
 el2up1=0.0;
+el2down1=0.0;
 eH2up1=0.0;
+eH2down1=0.0;
 for ee=1:n_el
     for ll=1:n_int
         uh=0.0;
@@ -112,17 +122,20 @@ for ee=1:n_el
             xl=xl+x_coor(IEN(aa,ee))*PolyShape(aa,xi(ll),0);
             dx_dxi=dx_dxi+x_coor(IEN(aa,ee))*PolyShape(aa,xi(ll),1);
         end
+        dxi_dx= 1.0 / dx_dxi;
         el2up1=el2up1+weight(ll)*(uh-exact(xl)).^2*dx_dxi;
-        eH2up1=eH2up1+weight(ll)*(uh_dx-exact_dx(xl)).^2*dx_dxi;
+       % el2down1=el2down1+weight(ll)*(exact(xl)).^2*dx_dxi;
+        eH2up1=eH2up1+weight(ll)*(uh_dx*dxi_dx-exact_dx(xl)).^2*dx_dxi;
+       % eH2down1=eH2down1+(exact_dx(xl)).^2*dx_dxi*weight(ll);
     end
 end
-el2up=el2up1.^(0.5);
-exact_2=@(x) x.^6;
-el2down=integral(exact_2,0,1).^(0.5);
-el2=el2up/el2down;
-eH2up=eH2up1.^(0.5);
-exact_dx2=@(x) 9*(x.^4);
-eH2down=integral(exact_dx2,0,1).^(0.5);
-eH2=eH2up/eH2down;
- 
+el2(n_el)=sqrt(el2up1/el2down);
+eH2(n_el)=sqrt(eH2up1/eH2down);
+end
+for hh=2:2:16
+    ele_hh=1.0/hh;
+end
+ plot(log(ele_hh),log(el2))
+ hold on
+ plot(log(ele_hh),log(eH2))
 
