@@ -12,7 +12,7 @@ h = 0;
 % =========================================================================
 
 % parameters of the FEM
-n_el  = 2;       % number of elements
+n_el  = 4;       % number of elements
 n_en  = 2;        % number of element nodes
 n_int = 3;        % number of quadrature points
 n_np  = n_el + 1; % number of points 
