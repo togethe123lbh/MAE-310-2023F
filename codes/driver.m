@@ -4,15 +4,16 @@ clear; clc;
 % =========================================================================
 % Problem definition exact solution
 
-exact = @(x) -x.^3;
-exact_dx=@(x) -3*(x.^2);
+
+g = 1;
+h = 0;
+exact = @(x) x.^3;
+exact_dx=@(x) 3*(x.^2);
 f = @(x) -6.0 * x;
 exact_2=@(x) x.^6;
 el2down=integral(exact_2,0,1);
 exact_dx2=@(x) 9*(x.^4);
 eH2down=integral(exact_dx2,0,1);
-g = 1;
-h = 0;
 % =========================================================================
 
 % parameters of the FEM
@@ -134,8 +135,8 @@ eH2(n_el*0.5)=sqrt(eH2up1/eH2down);
 end
 
     ele_hh=1./(2:2:16);
-
  plot(log(ele_hh),log(el2))
  hold on
  plot(log(ele_hh),log(eH2))
-
+ slope_el2=(log(el2(end))-log(el2(1)))/(log(ele_hh(end))-log(ele_hh(1)));
+ slope_eH2=(log(eH2(end))-log(eH2(1)))/(log(ele_hh(end))-log(ele_hh(1)));
