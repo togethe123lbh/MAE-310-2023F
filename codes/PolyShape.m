@@ -1,5 +1,4 @@
 function val = PolyShape(a, xi, der)
-
 %linear element
 % if a == 1
 %     if der == 0
