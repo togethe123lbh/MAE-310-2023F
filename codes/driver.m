@@ -4,15 +4,26 @@ clear; clc;
 % =========================================================================
 % Problem definition exact solution
 
+%linear and quadratic
+% g = 1;
+% h = 0;
+% exact = @(x) x.^3;
+% exact_dx=@(x) 3*(x.^2);
+% f = @(x) -6.0 * x;
+% exact_2=@(x) x.^6;
+% el2down=integral(exact_2,0,1);
+% exact_dx2=@(x) 9*(x.^4);
+% eH2down=integral(exact_dx2,0,1);
 
-g = 1;
-h = 0;
-exact = @(x) x.^3;
-exact_dx=@(x) 3*(x.^2);
-f = @(x) -6.0 * x;
-exact_2=@(x) x.^6;
+%cubic
+g = sin(1);
+h = -1;
+exact = @(x) sin(x);
+exact_dx=@(x) cos(x);
+f = @(x) sin(x);
+exact_2=@(x) sin(x).^2;
 el2down=integral(exact_2,0,1);
-exact_dx2=@(x) 9*(x.^4);
+exact_dx2=@(x) cos(x).^2;
 eH2down=integral(exact_dx2,0,1);
 % =========================================================================
 
@@ -22,18 +33,21 @@ n_el  = 2;       % number of elements
 %n_en  = 2;        % number of element nodes
 
 %quadratic
-n_en=3;
+% n_en=3;
+
+%cubic
+n_en=4;
 n_int = 3;        % number of quadrature points
 el2=zeros(8,1);
 eH2=zeros(8,1);
 for el=2:2:16
 n_el  = el;
-n_np  = 2*el + 1; % number of points 
+n_np  = 3*el + 1; % number of points 
 n_eq  = n_np - 1; % number of equations
 
 % =========================================================================
 % Generate the mesh nodal coordinates
-hh     = 1 / (2*el);
+hh     = 1 / (3*el);
 x_coor = 0 : hh : 1;
 
 % IEN
@@ -41,7 +55,7 @@ IEN = zeros(n_en, n_el);
 
 for ee = 1 : n_el
   for aa = 1 : n_en
-    IEN(aa,ee) = 2*ee + aa - 2;
+    IEN(aa,ee) = 3*ee + aa - 3;
   end
 end
 % =========================================================================
