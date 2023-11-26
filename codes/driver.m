@@ -18,18 +18,22 @@ eH2down=integral(exact_dx2,0,1);
 
 % parameters of the FEM
 n_el  = 2;       % number of elements
-n_en  = 2;        % number of element nodes
+%linear
+%n_en  = 2;        % number of element nodes
+
+%quadratic
+n_en=3;
 n_int = 3;        % number of quadrature points
 el2=zeros(8,1);
 eH2=zeros(8,1);
 for el=2:2:16
-    n_el = el;
-n_np  = n_el + 1; % number of points 
+n_el  = el;
+n_np  = 2*el + 1; % number of points 
 n_eq  = n_np - 1; % number of equations
 
 % =========================================================================
 % Generate the mesh nodal coordinates
-hh     = 1 / n_el;
+hh     = 1 / (2*el);
 x_coor = 0 : hh : 1;
 
 % IEN
@@ -37,7 +41,7 @@ IEN = zeros(n_en, n_el);
 
 for ee = 1 : n_el
   for aa = 1 : n_en
-    IEN(aa,ee) = ee + aa - 1;
+    IEN(aa,ee) = 2*ee + aa - 2;
   end
 end
 % =========================================================================
