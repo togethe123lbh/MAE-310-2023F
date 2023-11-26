@@ -69,7 +69,7 @@ eH2=zeros(6,1);
 % generate the quadrature rule
 % for n_int=1:1:6
 
-n_int = 1;
+n_int = 5;
 [xi, weight] = Gauss(n_int, -1, 1);
 
 K = spalloc(n_eq, n_eq, 3*n_eq); % allocate the global stiffness matrix
