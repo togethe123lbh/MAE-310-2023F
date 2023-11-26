@@ -67,15 +67,19 @@ LM = ID(IEN);
 el2=zeros(6,1);
 eH2=zeros(6,1);
 % generate the quadrature rule
-for n_int=1:1:6
+% for n_int=1:1:6
+
+n_int = 1;
 [xi, weight] = Gauss(n_int, -1, 1);
 
 K = spalloc(n_eq, n_eq, 3*n_eq); % allocate the global stiffness matrix
+K_exact=spalloc(n_eq, n_eq, 3*n_eq);
 F = zeros(n_eq, 1);    % allocate the global load vector
 
 % Assembly of K and F
 for ee = 1 : n_el
     k_e = zeros(n_en, n_en);
+    k_exact=zeros(n_en,n_en);
     f_e = zeros(n_en, 1); 
     
     x_ele = x_coor(IEN(1:n_en,ee)); % A = IEN(a,e) and x_ele(a) = x_coor(A)
@@ -93,6 +97,10 @@ for ee = 1 : n_el
             f_e(aa) = f_e(aa) + weight(ll) * PolyShape(aa, xi(ll), 0) * f(x_l) * dx_dxi;
             for bb = 1 : n_en
                 k_e(aa,bb) = k_e(aa,bb) + weight(ll) * PolyShape(aa, xi(ll), 1) * PolyShape(bb, xi(ll), 1) * dxi_dx;
+              %  k_exact(aa,bb)=integral(PolyShape(aa, x, 1) * PolyShape(bb, x, 1)*dxi_dx,-1,1);
+              f=@(x) PolyShape(aa, x, 1) .* PolyShape(bb, x, 1).*dxi_dx;
+              k_exact(aa,bb)=integral(f,-1,1);
+              
             end
         end
     end
@@ -106,6 +114,7 @@ for ee = 1 : n_el
                 QQ = LM(bb,ee);
                 if QQ > 0
                     K(PP,QQ) = K(PP,QQ) + k_e(aa,bb);
+                    K_exact(PP,QQ)=K_exact(PP,QQ)+k_exact(aa,bb);
                 else
                     F(PP) = F(PP) - k_e(aa,bb) * g;
                 end
@@ -149,19 +158,80 @@ for ee=1:n_el
 %        % el2down1=el2down1+weight(ll)*(exact(xl)).^2*dx_dxi;
 %         eH2up1=eH2up1+weight(ll)*(uh_dx*dxi_dx-exact_dx(xl)).^2*dx_dxi;
 %        % eH2down1=eH2down1+(exact_dx(xl)).^2*dx_dxi*weight(ll);
-exact_M=exact_M+weight(ll)*(exact(xl)).^2*dx_dxi;
-exact_dxM=exact_dxM+(exact_dx(xl)).^2*dx_dxi*weight(ll);
+% exact_M=exact_M+weight(ll)*(exact(xl)).^2*dx_dxi;
+% exact_dxM=exact_dxM+(exact_dx(xl)).^2*dx_dxi*weight(ll);
 
     end
 end
-el2(n_int,1)=sqrt(exact_M-el2down);
-eH2(n_int,1)=sqrt(exact_dxM-eH2down);
-end
- 
-x=1:1:6;
-plot(x,el2)
-hold on
-plot(x,eH2)
+
+% function val =intergrate(a,b,der,dxi_dx,xmin,xmax)
+% if a == 1
+%     if der == 0
+%         output1 =@(xi) (-9./16) * (xi.^3-xi.^2-(1./9)*xi+(1./9));
+%     elseif der == 1
+%         output1 =@(xi) (-9./16)*(3*(xi.^2)-2*xi-(1./9));
+%     end
+% elseif a == 2
+%     if der == 0
+%         output1 =@(x) (27./16) * (x.^3-(1./3)*x.^2-x+(1./3));
+%     elseif der == 1
+%         output1 =@(x) (27./16) * (3*x.^2-(2./3)*x-1);
+%     else
+%     end
+% elseif a == 3
+%     if der == 0
+%         output1 =@(x) (-27./16) * (x.^3+(1./3)*x.^2-x-(1./3));
+%     elseif der == 1
+%         output1 =@(x) (-27./16) * (3*x.^2+(2./3)*x-1);
+%     end
+% elseif a == 4
+%     if der == 0
+%         output1 =@(x) (9./16) * (x.^3+x.^2-(1./9)*x-(1./9));
+%     elseif der == 1
+%         output1 =@(x) (9./16)*(3*(x.^2)+2*x-(1./9));
+%     else
+%     end
+% end
+% 
+% if b == 1
+%     if der == 0
+%         output2 =@(x) (-9./16) * (x.^3-x.^2-(1./9)*x+(1./9));
+%     elseif der == 1
+%         output2 =@(x) (-9./16)*(3*(x.^2)-2*x-(1./9));
+%     end
+% elseif b == 2
+%     if der == 0
+%         output2 =@(x) (27./16) * (x.^3-(1./3)*x.^2-x+(1./3));
+%     elseif der == 1
+%         output2 =@(x) (27./16) * (3*x.^2-(2./3)*x-1);
+%     else
+%     end
+% elseif b == 3
+%     if der == 0
+%         output2 =@(x) (-27./16) * (x.^3+(1./3)*x.^2-x-(1./3));
+%     elseif der == 1
+%         output2 =@(x) (-27./16) * (3*x.^2+(2./3)*x-1);
+%     end
+% elseif b == 4
+%     if der == 0
+%         output2 =@(x) (9./16) * (x.^3+x.^2-(1./9)*x-(1./9));
+%     elseif der == 1
+%         output2 =@(x) (9./16)*(3*(x.^2)+2*x-(1./9));
+%     else
+%     end
+% end
+% f=@(x) output1*output2*dxi_dx;
+% val=integral(f,xmin,xmax);
+% end
+
+% el2(n_int,1)=sqrt(exact_M-el2down);
+% eH2(n_int,1)=sqrt(exact_dxM-eH2down);
+% % end
+%  
+% x=1:1:6;
+% plot(x,el2)
+% hold on
+% plot(x,eH2)
 % ele_hh=ones(8,6)
 % 1./(2:2:16);
 % for col=1:1:6
