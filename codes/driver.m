@@ -37,11 +37,10 @@ n_el  = 2;       % number of elements
 
 %cubic
 n_en=4;
-n_int = 3;        % number of quadrature points
-el2=zeros(8,1);
-eH2=zeros(8,1);
-for el=2:2:16
-n_el  = el;
+      % number of quadrature points
+
+%for el=2:2:16
+ el  = n_el;
 n_np  = 3*el + 1; % number of points 
 n_eq  = n_np - 1; % number of equations
 
@@ -65,8 +64,10 @@ ID = 1 : n_np;
 ID(end) = 0; % Modify ID according to the Dirichlet BC info
 
 LM = ID(IEN);
-
+el2=zeros(6,1);
+eH2=zeros(6,1);
 % generate the quadrature rule
+for n_int=1:1:6
 [xi, weight] = Gauss(n_int, -1, 1);
 
 K = spalloc(n_eq, n_eq, 3*n_eq); % allocate the global stiffness matrix
@@ -129,6 +130,8 @@ el2up1=0.0;
 el2down1=0.0;
 eH2up1=0.0;
 eH2down1=0.0;
+exact_M=0.0;
+exact_dxM=0.0;
 for ee=1:n_el
     for ll=1:n_int
         uh=0.0;
@@ -142,19 +145,31 @@ for ee=1:n_el
             dx_dxi=dx_dxi+x_coor(IEN(aa,ee))*PolyShape(aa,xi(ll),1);
         end
         dxi_dx= 1.0 / dx_dxi;
-        el2up1=el2up1+weight(ll)*(uh-exact(xl)).^2*dx_dxi;
-       % el2down1=el2down1+weight(ll)*(exact(xl)).^2*dx_dxi;
-        eH2up1=eH2up1+weight(ll)*(uh_dx*dxi_dx-exact_dx(xl)).^2*dx_dxi;
-       % eH2down1=eH2down1+(exact_dx(xl)).^2*dx_dxi*weight(ll);
+%         el2up1=el2up1+weight(ll)*(uh-exact(xl)).^2*dx_dxi;
+%        % el2down1=el2down1+weight(ll)*(exact(xl)).^2*dx_dxi;
+%         eH2up1=eH2up1+weight(ll)*(uh_dx*dxi_dx-exact_dx(xl)).^2*dx_dxi;
+%        % eH2down1=eH2down1+(exact_dx(xl)).^2*dx_dxi*weight(ll);
+exact_M=exact_M+weight(ll)*(exact(xl)).^2*dx_dxi;
+exact_dxM=exact_dxM+(exact_dx(xl)).^2*dx_dxi*weight(ll);
+
     end
 end
-el2(n_el*0.5)=sqrt(el2up1/el2down);
-eH2(n_el*0.5)=sqrt(eH2up1/eH2down);
+el2(n_int,1)=sqrt(exact_M-el2down);
+eH2(n_int,1)=sqrt(exact_dxM-eH2down);
 end
-
-    ele_hh=1./(2:2:16);
- plot(log(ele_hh),log(el2))
- hold on
- plot(log(ele_hh),log(eH2))
- slope_el2=(log(el2(end))-log(el2(1)))/(log(ele_hh(end))-log(ele_hh(1)));
- slope_eH2=(log(eH2(end))-log(eH2(1)))/(log(ele_hh(end))-log(ele_hh(1)));
+ 
+x=1:1:6;
+plot(x,el2)
+hold on
+plot(x,eH2)
+% ele_hh=ones(8,6)
+% 1./(2:2:16);
+% for col=1:1:6
+% for row=1:1:8
+%  plot(log(ele_hh),log(el2(row,col)))
+%  hold on
+%  plot(log(ele_hh),log(eH2(row,col)))
+%  slope_el2=(log(el2(n_el*0.5,end))-log(el2(n_el*0.5,1)))/(log(ele_hh(end))-log(ele_hh(1)));
+%  slope_eH2=(log(eH2(n_el*0.5,end))-log(eH2(n_el*0.5,1)))/(log(ele_hh(end))-log(ele_hh(1)));
+% end   
+%  end
