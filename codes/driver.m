@@ -70,8 +70,8 @@ eH2=zeros(6,1);
 % for n_int=1:1:6
 
 % n_int = 1;
-Final=zeros(20,1);
-for n_int=1:20
+Final=zeros(6,1);
+for n_int=1:6
 [xi, weight] = Gauss(n_int, -1, 1);
 
 K = spalloc(n_eq, n_eq, 3*n_eq); % allocate the global stiffness matrix
@@ -193,10 +193,10 @@ end
 Final(n_int)=sqrt(fi);
 end
 
-for aa=3:20
-plot(aa,Final(aa),'o');
-hold on
-end
+% for aa=3:20
+% plot(aa,Final(aa),'o');
+% hold on
+% end
 % eH2(n_int,1)=sqrt(exact_dxM-eH2down);
 % % end
 %  
