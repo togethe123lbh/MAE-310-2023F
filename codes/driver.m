@@ -20,7 +20,7 @@ g = sin(1);
 h = -1;
 exact = @(x) sin(x);
 exact_dx=@(x) cos(x);
-f = @(x) sin(x);
+handle = @(x) sin(x);
 exact_2=@(x) sin(x).^2;
 el2down=integral(exact_2,0,1);
 exact_dx2=@(x) cos(x).^2;
@@ -69,40 +69,59 @@ eH2=zeros(6,1);
 % generate the quadrature rule
 % for n_int=1:1:6
 
-n_int = 5;
+% n_int = 1;
+Final=zeros(20,1);
+for n_int=1:20
 [xi, weight] = Gauss(n_int, -1, 1);
 
 K = spalloc(n_eq, n_eq, 3*n_eq); % allocate the global stiffness matrix
 K_exact=spalloc(n_eq, n_eq, 3*n_eq);
 F = zeros(n_eq, 1);    % allocate the global load vector
-
+F_exact= zeros(n_eq, 1); 
 % Assembly of K and F
 for ee = 1 : n_el
     k_e = zeros(n_en, n_en);
     k_exact=zeros(n_en,n_en);
     f_e = zeros(n_en, 1); 
-    
+    f_exact = zeros(n_en, 1);
     x_ele = x_coor(IEN(1:n_en,ee)); % A = IEN(a,e) and x_ele(a) = x_coor(A)
-
+dx_dxiexact=@(x) 0;
     for ll = 1 : n_int
         dx_dxi = 0.0;
         x_l = 0.0;
-        for aa = 1 : n_en
-            dx_dxi = dx_dxi + x_ele(aa) * PolyShape(aa, xi(ll), 1);
-            x_l = x_l + x_ele(aa) * PolyShape(aa, xi(ll), 0);
-        end
-        dxi_dx = 1.0 / dx_dxi;
 
         for aa = 1 : n_en
-            f_e(aa) = f_e(aa) + weight(ll) * PolyShape(aa, xi(ll), 0) * f(x_l) * dx_dxi;
+            dx_dxi = dx_dxi + x_ele(aa) * PolyShape(aa, xi(ll), 1);
+            
+            dx_dxiexact=@(x) dx_dxiexact(x)+ x_ele(aa) *PolyShape(aa, x, 1);
+            x_l = x_l + x_ele(aa) * PolyShape(aa, xi(ll), 0);
+        end
+        dxi_dx = 1.0 /dx_dxi;
+      
+       
+
+        for aa = 1 : n_en
+            f_e(aa) = f_e(aa) + weight(ll) * PolyShape(aa, xi(ll), 0) * handle(x_l) * dx_dxi;
+            f_exact1=@(x) PolyShape(aa,x,0).*handle(x_l).* dx_dxi;
+            f_exact(aa)=integral(f_exact1,-1,1);
             for bb = 1 : n_en
                 k_e(aa,bb) = k_e(aa,bb) + weight(ll) * PolyShape(aa, xi(ll), 1) * PolyShape(bb, xi(ll), 1) * dxi_dx;
               %  k_exact(aa,bb)=integral(PolyShape(aa, x, 1) * PolyShape(bb, x, 1)*dxi_dx,-1,1);
-              f=@(x) PolyShape(aa, x, 1) .* PolyShape(bb, x, 1).*dxi_dx;
-              k_exact(aa,bb)=integral(f,-1,1);
+              handle=@(x) PolyShape(aa, x, 1) .* PolyShape(bb, x, 1).*dxi_dx;
+              k_exact(aa,bb)=integral(handle,-1,1);
               
             end
         end
+
+%         for bb = 1 : n_en
+%             for aa = 1 : n_en
+%                 for cc = 1 : n_en
+%             dxi_dx=dxi_dx+PolyShape(cc, x, 1);
+%                 end
+%                 f=@(x) PolyShape(aa, x, 1) .* PolyShape(bb, x, 1);
+% k_exact(aa,bb)=k_exact(aa,bb)+integral(f,-1,1);
+%             end
+%         end
     end
 
     % Now we need to put element k and f into global K and F
@@ -110,6 +129,7 @@ for ee = 1 : n_el
         PP = LM(aa,ee);
         if PP > 0
             F(PP) = F(PP) + f_e(aa);
+            F_exact(PP)=F_exact(PP) +f_exact(aa);
             for bb = 1 : n_en
                 QQ = LM(bb,ee);
                 if QQ > 0
@@ -117,6 +137,7 @@ for ee = 1 : n_el
                     K_exact(PP,QQ)=K_exact(PP,QQ)+k_exact(aa,bb);
                 else
                     F(PP) = F(PP) - k_e(aa,bb) * g;
+                     F_exact(PP) = F_exact(PP) - k_exact(aa,bb) * g;
                 end
             end
         end
@@ -124,6 +145,7 @@ for ee = 1 : n_el
 
     if ee == 1
         F(ID(IEN(1,ee))) = F(ID(IEN(1,ee))) + h;
+        F_exact(ID(IEN(1,ee))) = F_exact(ID(IEN(1,ee))) + h;
     end
 end
 
@@ -163,68 +185,18 @@ for ee=1:n_el
 
     end
 end
+fi=0;
+for aa=1:n_eq
+fi=fi+(F(aa)-F_exact(aa))*(F(aa)-F_exact(aa));
+end
 
-% function val =intergrate(a,b,der,dxi_dx,xmin,xmax)
-% if a == 1
-%     if der == 0
-%         output1 =@(xi) (-9./16) * (xi.^3-xi.^2-(1./9)*xi+(1./9));
-%     elseif der == 1
-%         output1 =@(xi) (-9./16)*(3*(xi.^2)-2*xi-(1./9));
-%     end
-% elseif a == 2
-%     if der == 0
-%         output1 =@(x) (27./16) * (x.^3-(1./3)*x.^2-x+(1./3));
-%     elseif der == 1
-%         output1 =@(x) (27./16) * (3*x.^2-(2./3)*x-1);
-%     else
-%     end
-% elseif a == 3
-%     if der == 0
-%         output1 =@(x) (-27./16) * (x.^3+(1./3)*x.^2-x-(1./3));
-%     elseif der == 1
-%         output1 =@(x) (-27./16) * (3*x.^2+(2./3)*x-1);
-%     end
-% elseif a == 4
-%     if der == 0
-%         output1 =@(x) (9./16) * (x.^3+x.^2-(1./9)*x-(1./9));
-%     elseif der == 1
-%         output1 =@(x) (9./16)*(3*(x.^2)+2*x-(1./9));
-%     else
-%     end
-% end
-% 
-% if b == 1
-%     if der == 0
-%         output2 =@(x) (-9./16) * (x.^3-x.^2-(1./9)*x+(1./9));
-%     elseif der == 1
-%         output2 =@(x) (-9./16)*(3*(x.^2)-2*x-(1./9));
-%     end
-% elseif b == 2
-%     if der == 0
-%         output2 =@(x) (27./16) * (x.^3-(1./3)*x.^2-x+(1./3));
-%     elseif der == 1
-%         output2 =@(x) (27./16) * (3*x.^2-(2./3)*x-1);
-%     else
-%     end
-% elseif b == 3
-%     if der == 0
-%         output2 =@(x) (-27./16) * (x.^3+(1./3)*x.^2-x-(1./3));
-%     elseif der == 1
-%         output2 =@(x) (-27./16) * (3*x.^2+(2./3)*x-1);
-%     end
-% elseif b == 4
-%     if der == 0
-%         output2 =@(x) (9./16) * (x.^3+x.^2-(1./9)*x-(1./9));
-%     elseif der == 1
-%         output2 =@(x) (9./16)*(3*(x.^2)+2*x-(1./9));
-%     else
-%     end
-% end
-% f=@(x) output1*output2*dxi_dx;
-% val=integral(f,xmin,xmax);
-% end
+Final(n_int)=sqrt(fi);
+end
 
-% el2(n_int,1)=sqrt(exact_M-el2down);
+for aa=3:20
+plot(aa,Final(aa),'o');
+hold on
+end
 % eH2(n_int,1)=sqrt(exact_dxM-eH2down);
 % % end
 %  
